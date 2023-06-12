@@ -113,6 +113,35 @@
 #   Auto Complete:  Ctrl-Space (or just start typing)
 #
 `;
+      const parameters = {};
+
+      for (const entry of window.location.search.slice(1).split('&')) {
+        const eq = entry.indexOf('=');
+        if (eq >= 0) {
+          parameters[decodeURIComponent(entry.slice(0, eq))] = decodeURIComponent(
+            entry.slice(eq + 1),
+          );
+        }
+      }
+
+      function updateURL(data) {
+
+        Object.assign(parameters, data);
+
+        const newSearch =
+          '?' +
+          Object.keys(parameters)
+            .filter(function (key) {
+              return Boolean(parameters[key]);
+            })
+            .map(function (key) {
+              return (
+                encodeURIComponent(key) + '=' + encodeURIComponent(parameters[key])
+              );
+            })
+            .join('&');
+        history.replaceState(null, null, newSearch);
+      }
 
       const fetchURL = window.location.href;
 
@@ -142,19 +171,57 @@
         subscriptionUrl,
       });
 
+
       function GraphiQLWithExplorer() {
-        const [query, setQuery] = React.useState(EXAMPLE_QUERY);
+        const [query, setQuery] = React.useState(parameters.q || EXAMPLE_QUERY);
+        const [variables, setVariables] = React.useState(null);
+        const activeTab = React.useRef(null);
+        const [headers, setHeaders] = React.useState(null);
+
+        function onEditQuery(query) {
+          setQuery(query)
+          updateURL({ q: query });
+        }
+
+        function onEditVariables(variables) {
+          updateURL({ variables });
+        }
+
+        function onEditHeaders(headers) {
+          updateURL({ headers });
+        }
+
+        function onTabChange(tabsState) {
+          if (activeTab.current !== tabsState.activeTabIndex) {
+            activeTab.current = tabsState.activeTabIndex;
+
+            const query = tabsState.tabs[tabsState.activeTabIndex].query
+            setQuery(query);
+            updateURL({q: query});
+          }
+        }
+
         const explorerPlugin = GraphiQLPluginExplorer.useExplorerPlugin({
           query: query,
-          onEdit: setQuery,
+          onEdit: onEditQuery,
         });
+
         return React.createElement(GraphiQL, {
           fetcher: fetcher,
           defaultEditorToolsVisibility: true,
+          headers: headers,
           plugins: [explorerPlugin],
           query: query,
-          onEditQuery: setQuery,
+          variables: variables,
+          onEditQuery: onEditQuery,
+          onEditHeaders: onEditHeaders,
+          onEditVariables: onEditVariables,
+          onTabChange: onTabChange,
           inputValueDeprecation: true,
+          defaultEditorToolsVisibility: true,
+          isHeadersEditorEnabled: true,
+          shouldPersistHeaders: true,
+          defaultHeaders: parameters.defaultHeaders,
         });
       }
 
