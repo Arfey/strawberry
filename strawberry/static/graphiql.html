@@ -174,9 +174,8 @@
 
       function GraphiQLWithExplorer() {
         const [query, setQuery] = React.useState(parameters.q || EXAMPLE_QUERY);
-        const [variables, setVariables] = React.useState(null);
-        const activeTab = React.useRef(null);
-        const [headers, setHeaders] = React.useState(null);
+        const [variables, setVariables] = React.useState(parameters.variables);
+        const [headers, setHeaders] = React.useState(parameters.headers);
 
         function onEditQuery(query) {
           setQuery(query)
@@ -189,16 +188,6 @@
 
         function onEditHeaders(headers) {
           updateURL({ headers });
-        }
-
-        function onTabChange(tabsState) {
-          if (activeTab.current !== tabsState.activeTabIndex) {
-            activeTab.current = tabsState.activeTabIndex;
-
-            const query = tabsState.tabs[tabsState.activeTabIndex].query
-            setQuery(query);
-            updateURL({q: query});
-          }
         }
 
         const explorerPlugin = GraphiQLPluginExplorer.useExplorerPlugin({
@@ -216,7 +205,6 @@
           onEditQuery: onEditQuery,
           onEditHeaders: onEditHeaders,
           onEditVariables: onEditVariables,
-          onTabChange: onTabChange,
           inputValueDeprecation: true,
           defaultEditorToolsVisibility: true,
           isHeadersEditorEnabled: true,
